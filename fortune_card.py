@@ -17,16 +17,37 @@ except ImportError:  # pragma: no cover - Python < 3.9 fallback.
 
 FORTUNES = ("大吉", "吉", "中", "凶", "大凶")
 ACTIVITIES = ("吃ota饭", "反切", "关门", "看活", "规划远征", "睡觉", "喝酒", "版聊")
+CACHE_VERSION = "winfont1"
 
 FONT_CANDIDATES = (
+    "C:/Windows/Fonts/msyh.ttc",
+    "C:/Windows/Fonts/msyhbd.ttc",
+    "C:/Windows/Fonts/simhei.ttf",
+    "C:/Windows/Fonts/simsun.ttc",
+    "C:/Windows/Fonts/Deng.ttf",
+    "C:/Windows/Fonts/Dengb.ttf",
+    "C:/Windows/Fonts/msjh.ttc",
+    "C:/Windows/Fonts/msjhbd.ttc",
     "/System/Library/Fonts/PingFang.ttc",
     "/System/Library/Fonts/Hiragino Sans GB.ttc",
     "/System/Library/Fonts/STHeiti Medium.ttc",
     "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
     "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
     "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+    "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+)
+FONT_NAMES = (
+    "Microsoft YaHei",
+    "SimHei",
+    "SimSun",
+    "DengXian",
+    "Microsoft JhengHei",
+    "Noto Sans CJK SC",
+    "WenQuanYi Micro Hei",
+    "Arial Unicode MS",
 )
 
 
@@ -80,7 +101,7 @@ class FortuneCardGenerator:
 
     def get_or_create(self, user_id: str, date_key: str | None = None) -> Path:
         result = build_fortune(user_id, date_key)
-        filename = f"{result.date_key}_{_safe_filename(result.user_id)}.png"
+        filename = f"{result.date_key}_{_safe_filename(result.user_id)}_{CACHE_VERSION}.png"
         path = self.output_dir / filename
         if not path.exists():
             self.render(result, path)
@@ -132,6 +153,11 @@ def _font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
                 return ImageFont.truetype(candidate, size=size)
             except OSError:
                 continue
+    for font_name in FONT_NAMES:
+        try:
+            return ImageFont.truetype(font_name, size=size)
+        except OSError:
+            continue
     return ImageFont.load_default()
 
 
