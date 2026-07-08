@@ -17,24 +17,28 @@ except ImportError:  # pragma: no cover - Python < 3.9 fallback.
 
 FORTUNES = ("大吉", "吉", "中", "凶", "大凶")
 ACTIVITIES = ("吃ota饭", "反切", "关门", "看活", "规划远征", "睡觉", "喝酒", "版聊")
-CACHE_VERSION = "font4"
+CACHE_VERSION = "yahei1"
 PLUGIN_DIR = Path(__file__).resolve().parent
+BACKGROUND_IMAGE = PLUGIN_DIR / "pcie_background.png"
 
 FONT_CANDIDATES = (
-    "NotoSansSC-Regular.otf",
-    "NotoSansCJK-Regular.ttc",
     "msyh.ttc",
+    "msyhbd.ttc",
+    "C:/Windows/Fonts/msyh.ttc",
+    "C:/Windows/Fonts/msyhbd.ttc",
+    "C:/Windows/Fonts/msyh.ttf",
+    "C:/Windows/Fonts/msyhbd.ttf",
     "simhei.ttf",
     "simsun.ttc",
     "Deng.ttf",
-    "C:/Windows/Fonts/msyh.ttc",
-    "C:/Windows/Fonts/msyhbd.ttc",
     "C:/Windows/Fonts/simhei.ttf",
     "C:/Windows/Fonts/simsun.ttc",
     "C:/Windows/Fonts/Deng.ttf",
     "C:/Windows/Fonts/Dengb.ttf",
     "C:/Windows/Fonts/msjh.ttc",
     "C:/Windows/Fonts/msjhbd.ttc",
+    "NotoSansSC-Regular.otf",
+    "NotoSansCJK-Regular.ttc",
     "/System/Library/Fonts/PingFang.ttc",
     "/System/Library/Fonts/Hiragino Sans GB.ttc",
     "/System/Library/Fonts/STHeiti Medium.ttc",
@@ -191,6 +195,10 @@ class _FontSet:
 
 
 def _make_background(width: int, height: int, seed: int) -> Image.Image:
+    asset = _load_background_asset(width, height)
+    if asset is not None:
+        return asset
+
     rng = random.Random(seed)
     img = Image.new("RGBA", (width, height), (11, 12, 24, 255))
     pixels = img.load()
@@ -245,6 +253,20 @@ def _make_background(width: int, height: int, seed: int) -> Image.Image:
         d.line((x1 + 2, gold_top + 5, x1 + 12, gold_top + 5), fill=(255, 229, 142, 180), width=1)
 
     return img
+
+
+def _load_background_asset(width: int, height: int) -> Image.Image | None:
+    if not BACKGROUND_IMAGE.exists():
+        return None
+
+    with Image.open(BACKGROUND_IMAGE) as source:
+        img = source.convert("RGBA")
+
+    scale = max(width / img.width, height / img.height)
+    resized = img.resize((round(img.width * scale), round(img.height * scale)), Image.Resampling.LANCZOS)
+    left = (resized.width - width) // 2
+    top = (resized.height - height) // 2
+    return resized.crop((left, top, left + width, top + height))
 
 
 def _draw_main_panel(draw: ImageDraw.ImageDraw) -> None:
