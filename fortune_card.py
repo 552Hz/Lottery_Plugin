@@ -17,16 +17,16 @@ except ImportError:  # pragma: no cover - Python < 3.9 fallback.
 
 FORTUNES = ("大吉", "吉", "中", "凶", "大凶")
 ACTIVITIES = ("吃ota饭", "反切", "关门", "看活", "规划远征", "睡觉", "喝酒", "版聊")
-CACHE_VERSION = "font3"
+CACHE_VERSION = "font4"
 PLUGIN_DIR = Path(__file__).resolve().parent
 
 FONT_CANDIDATES = (
+    "NotoSansSC-Regular.otf",
+    "NotoSansCJK-Regular.ttc",
     "msyh.ttc",
     "simhei.ttf",
     "simsun.ttc",
     "Deng.ttf",
-    "NotoSansCJK-Regular.ttc",
-    "NotoSansSC-Regular.otf",
     "C:/Windows/Fonts/msyh.ttc",
     "C:/Windows/Fonts/msyhbd.ttc",
     "C:/Windows/Fonts/simhei.ttf",
@@ -44,17 +44,6 @@ FONT_CANDIDATES = (
     "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
     "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
     "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-)
-FONT_NAMES = (
-    "Microsoft YaHei",
-    "SimHei",
-    "SimSun",
-    "DengXian",
-    "Microsoft JhengHei",
-    "Noto Sans CJK SC",
-    "WenQuanYi Micro Hei",
-    "Arial Unicode MS",
 )
 
 
@@ -155,12 +144,11 @@ def _safe_filename(value: str) -> str:
 
 def _font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     selected = _select_font_source()
-    if selected:
-        try:
-            return ImageFont.truetype(selected, size=size)
-        except OSError:
-            pass
-    return ImageFont.load_default()
+    if not selected:
+        raise RuntimeError(
+            "未找到可用中文字体。请确认 NotoSansSC-Regular.otf 与 fortune_card.py 在同一目录。"
+        )
+    return ImageFont.truetype(selected, size=size)
 
 
 def get_font_debug_info() -> str:
@@ -173,7 +161,6 @@ def get_font_debug_info() -> str:
         if not font_path.is_absolute():
             font_path = PLUGIN_DIR / font_path
         checked.append(str(font_path))
-    checked.extend(FONT_NAMES)
     return "selected_font=None\nchecked=" + "\n".join(checked)
 
 
@@ -185,25 +172,11 @@ def _select_font_source() -> str | None:
         if font_path.exists():
             try:
                 font = ImageFont.truetype(str(font_path), size=32)
-                if _can_render_chinese(font):
-                    return str(font_path)
+                _ = font.getbbox("今日运势大吉宜忌")
+                return str(font_path)
             except OSError:
                 continue
-    for font_name in FONT_NAMES:
-        try:
-            font = ImageFont.truetype(font_name, size=32)
-            if _can_render_chinese(font):
-                return font_name
-        except OSError:
-            continue
     return None
-
-
-def _can_render_chinese(font: ImageFont.ImageFont) -> bool:
-    try:
-        return font.getmask("今日运势大吉宜忌").getbbox() is not None
-    except Exception:
-        return False
 
 
 class _FontSet:
