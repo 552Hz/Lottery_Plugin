@@ -1,0 +1,9 @@
+name: astrbot_plugin_idol_fortune
+display_name: 地下偶像抽签
+desc: QQ 群每日抽签插件，@机器人并发送 /抽签 后返回当天固定的运势图片。
+version: v1.0.0
+author: Zhuanz
+repo: ""
+short_desc: 每日固定地下偶像运势图。
+support_platforms:
+  - aiocqhttp
