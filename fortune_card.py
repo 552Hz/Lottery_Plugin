@@ -17,9 +17,16 @@ except ImportError:  # pragma: no cover - Python < 3.9 fallback.
 
 FORTUNES = ("大吉", "吉", "中", "凶", "大凶")
 ACTIVITIES = ("吃ota饭", "反切", "关门", "看活", "规划远征", "睡觉", "喝酒", "版聊")
-CACHE_VERSION = "winfont1"
+CACHE_VERSION = "font2"
+PLUGIN_DIR = Path(__file__).resolve().parent
 
 FONT_CANDIDATES = (
+    "msyh.ttc",
+    "simhei.ttf",
+    "simsun.ttc",
+    "Deng.ttf",
+    "NotoSansCJK-Regular.ttc",
+    "NotoSansSC-Regular.otf",
     "C:/Windows/Fonts/msyh.ttc",
     "C:/Windows/Fonts/msyhbd.ttc",
     "C:/Windows/Fonts/simhei.ttf",
@@ -148,17 +155,31 @@ def _safe_filename(value: str) -> str:
 
 def _font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     for candidate in FONT_CANDIDATES:
-        if Path(candidate).exists():
+        font_path = Path(candidate)
+        if not font_path.is_absolute():
+            font_path = PLUGIN_DIR / font_path
+        if font_path.exists():
             try:
-                return ImageFont.truetype(candidate, size=size)
+                font = ImageFont.truetype(str(font_path), size=size)
+                if _can_render_chinese(font):
+                    return font
             except OSError:
                 continue
     for font_name in FONT_NAMES:
         try:
-            return ImageFont.truetype(font_name, size=size)
+            font = ImageFont.truetype(font_name, size=size)
+            if _can_render_chinese(font):
+                return font
         except OSError:
             continue
     return ImageFont.load_default()
+
+
+def _can_render_chinese(font: ImageFont.ImageFont) -> bool:
+    try:
+        return font.getmask("今日运势大吉宜忌").getbbox() is not None
+    except Exception:
+        return False
 
 
 class _FontSet:
