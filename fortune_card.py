@@ -17,7 +17,7 @@ except ImportError:  # pragma: no cover - Python < 3.9 fallback.
 
 FORTUNES = ("大吉", "吉", "中", "凶", "大凶")
 ACTIVITIES = ("吃ota饭", "反切", "关门", "看活", "规划远征", "睡觉", "喝酒", "版聊")
-CACHE_VERSION = "font2"
+CACHE_VERSION = "font3"
 PLUGIN_DIR = Path(__file__).resolve().parent
 
 FONT_CANDIDATES = (
@@ -154,25 +154,49 @@ def _safe_filename(value: str) -> str:
 
 
 def _font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    selected = _select_font_source()
+    if selected:
+        try:
+            return ImageFont.truetype(selected, size=size)
+        except OSError:
+            pass
+    return ImageFont.load_default()
+
+
+def get_font_debug_info() -> str:
+    selected = _select_font_source()
+    if selected:
+        return f"selected_font={selected}"
+    checked = []
+    for candidate in FONT_CANDIDATES:
+        font_path = Path(candidate)
+        if not font_path.is_absolute():
+            font_path = PLUGIN_DIR / font_path
+        checked.append(str(font_path))
+    checked.extend(FONT_NAMES)
+    return "selected_font=None\nchecked=" + "\n".join(checked)
+
+
+def _select_font_source() -> str | None:
     for candidate in FONT_CANDIDATES:
         font_path = Path(candidate)
         if not font_path.is_absolute():
             font_path = PLUGIN_DIR / font_path
         if font_path.exists():
             try:
-                font = ImageFont.truetype(str(font_path), size=size)
+                font = ImageFont.truetype(str(font_path), size=32)
                 if _can_render_chinese(font):
-                    return font
+                    return str(font_path)
             except OSError:
                 continue
     for font_name in FONT_NAMES:
         try:
-            font = ImageFont.truetype(font_name, size=size)
+            font = ImageFont.truetype(font_name, size=32)
             if _can_render_chinese(font):
-                return font
+                return font_name
         except OSError:
             continue
-    return ImageFont.load_default()
+    return None
 
 
 def _can_render_chinese(font: ImageFont.ImageFont) -> bool:
